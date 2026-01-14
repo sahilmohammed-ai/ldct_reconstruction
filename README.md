@@ -1,6 +1,6 @@
 # SEF-LDCT: Low-Dose CT Image Denoising
 
-A deep learning project for low-dose CT (LDCT) image denoising using PyTorch.
+Deep Learning-Based Denoising of Low-Dose CT Images Using Wasserstein Generative Adversarial Networks
 
 ## Project Structure
 
@@ -64,20 +64,9 @@ python evaluate.py
 
 Results will be saved to `results/` (not tracked in git).
 
-## Model Checkpoints
-
-Model checkpoints are stored locally in `checkpoints/` but are not tracked in version control due to their large size (2.9GB+).
-
-**To share models:**
-- Use cloud storage (Google Drive, Dropbox, etc.)
-- Or use Git LFS (Large File Storage) if needed
-- Or use a model registry like Weights & Biases, HuggingFace
-
 ## Configuration
 
-See [BEST_CONFIGURATION.md](BEST_CONFIGURATION.md) for optimal training configurations.
-
-See [IMPROVEMENTS.md](IMPROVEMENTS.md) for planned improvements and notes.
+Look at [BEST_CONFIGURATION.md](BEST_CONFIGURATION.md) for optimal training configurations.
 
 ## Requirements
 
@@ -85,4 +74,4 @@ See [IMPROVEMENTS.md](IMPROVEMENTS.md) for planned improvements and notes.
 - PyTorch 2.0+
 - CUDA-capable GPU (recommended)
 
-For full dependency list, see [requirements.txt](requirements.txt) or [dependencies.txt](dependencies.txt).
+For full dependency list, see [requirements.txt](requirements.txt)
