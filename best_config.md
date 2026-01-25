@@ -205,18 +205,6 @@ python train.py \
 
 ---
 
-## Conclusion
-
-The key to achieving 4.82 dB PSNR improvement lies in:
-1. Simplicity over complexity (baseline U-Net)
-2. Careful learning rate balancing (4:1 ratio)
-3. Minimal loss constraints (L1 + Adversarial only)
-4. Balanced GAN training dynamics (1:1 update ratio)
-
-This configuration represents a well-tuned baseline that avoids common pitfalls of over-engineering in medical image denoising tasks.
-
----
-
 **Date**: December 2024
 **Task**: Low-Dose CT Denoising
 **Framework**: PyTorch + WGAN-GP
