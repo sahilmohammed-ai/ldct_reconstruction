@@ -1,7 +1,7 @@
 """
-Loss functions for LDCT GAN training.
-Simple version with just WGAN-GP and L1 loss.
-This is the loss configuration that achieved +4.41 dB PSNR.
+loss functions for ldct gan training.
+simple version with just wgan-gp and l1 loss.
+this is the loss configuration that achieved +4.41 db psnr.
 """
 
 import torch
@@ -11,15 +11,15 @@ from typing import Tuple
 
 class WassersteinGPLoss(nn.Module):
     """
-    Wasserstein GAN loss with gradient penalty.
-    More stable training than standard GAN loss.
+    wasserstein gan loss with gradient penalty.
+    more stable training than standard gan loss.
     """
 
     def __init__(self, lambda_gp: float = 10.0) -> None:
         """
-        Initialize WGAN-GP loss.
+        initialize wgan-gp loss.
 
-        Args:
+        args:
             lambda_gp: gradient penalty coefficient
         """
         super(WassersteinGPLoss, self).__init__()
@@ -32,30 +32,30 @@ class WassersteinGPLoss(nn.Module):
         fake: torch.Tensor
     ) -> torch.Tensor:
         """
-        Compute gradient penalty for WGAN-GP.
+        compute gradient penalty for wgan-gp.
 
-        Args:
+        args:
             discriminator: discriminator network
             real: real images
             fake: generated images
 
-        Returns:
+        returns:
             gradient penalty value
         """
         batch_size = real.size(0)
         device = real.device
 
-        # Random interpolation coefficient
+        # random interpolation coefficient
         alpha = torch.rand(batch_size, 1, 1, 1, device=device)
 
-        # Interpolate between real and fake
+        # interpolate between real and fake
         interpolates = alpha * real + (1 - alpha) * fake
         interpolates.requires_grad_(True)
 
-        # Discriminator output for interpolates
+        # discriminator output for interpolates
         d_interpolates = discriminator(interpolates)
 
-        # Compute gradients
+        # compute gradients
         gradients = torch.autograd.grad(
             outputs=d_interpolates,
             inputs=interpolates,
@@ -65,13 +65,13 @@ class WassersteinGPLoss(nn.Module):
             only_inputs=True
         )[0]
 
-        # Flatten gradients
+        # flatten gradients
         gradients = gradients.view(batch_size, -1)
 
-        # Compute gradient norm
+        # compute gradient norm
         gradient_norm = gradients.norm(2, dim=1)
 
-        # Gradient penalty
+        # gradient penalty
         penalty = ((gradient_norm - 1) ** 2).mean()
 
         return penalty
@@ -83,33 +83,33 @@ class WassersteinGPLoss(nn.Module):
         fake: torch.Tensor
     ) -> Tuple[torch.Tensor, dict]:
         """
-        Compute discriminator loss.
+        compute discriminator loss.
 
-        Args:
+        args:
             discriminator: discriminator network
             real: real images
             fake: generated images (detached)
 
-        Returns:
+        returns:
             tuple of (loss, metrics_dict)
         """
-        # Discriminator outputs
+        # discriminator outputs
         d_real = discriminator(real)
         d_fake = discriminator(fake.detach())
 
-        # Wasserstein loss
+        # wasserstein loss
         loss_real = -d_real.mean()
         loss_fake = d_fake.mean()
         loss_w = loss_real + loss_fake
 
-        # Gradient penalty
+        # gradient penalty
         gp = self.gradient_penalty(discriminator, real, fake)
         loss_gp = self.lambda_gp * gp
 
-        # Total discriminator loss
+        # total discriminator loss
         loss_d = loss_w + loss_gp
 
-        # Metrics
+        # metrics
         metrics = {
             'd_loss': loss_d.item(),
             'd_real': d_real.mean().item(),
@@ -126,13 +126,13 @@ class WassersteinGPLoss(nn.Module):
         fake: torch.Tensor
     ) -> Tuple[torch.Tensor, dict]:
         """
-        Compute generator adversarial loss.
+        compute generator adversarial loss.
 
-        Args:
+        args:
             discriminator: discriminator network
             fake: generated images
 
-        Returns:
+        returns:
             tuple of (loss, metrics_dict)
         """
         d_fake = discriminator(fake)
@@ -148,8 +148,8 @@ class WassersteinGPLoss(nn.Module):
 
 class CombinedLoss(nn.Module):
     """
-    Combined loss for generator training.
-    Simple version: adversarial + L1 reconstruction loss only.
+    combined loss for generator training.
+    simple version: adversarial + l1 reconstruction loss only.
     """
 
     def __init__(
@@ -160,11 +160,11 @@ class CombinedLoss(nn.Module):
         **kwargs  # Accept but ignore extra arguments for compatibility
     ) -> None:
         """
-        Initialize combined loss.
+        initialize combined loss.
 
-        Args:
+        args:
             lambda_adv: weight for adversarial loss
-            lambda_l1: weight for L1 reconstruction loss
+            lambda_l1: weight for l1 reconstruction loss
             lambda_gp: weight for gradient penalty
         """
         super(CombinedLoss, self).__init__()
@@ -172,10 +172,10 @@ class CombinedLoss(nn.Module):
         self.lambda_adv = lambda_adv
         self.lambda_l1 = lambda_l1
 
-        # Adversarial loss
+        # adversarial loss
         self.adv_loss = WassersteinGPLoss(lambda_gp=lambda_gp)
 
-        # Pixel-wise loss
+        # pixel-wise loss
         self.l1_loss = nn.L1Loss()
 
     def generator_loss(
@@ -185,27 +185,27 @@ class CombinedLoss(nn.Module):
         discriminator: nn.Module
     ) -> Tuple[torch.Tensor, dict]:
         """
-        Compute total generator loss.
+        compute total generator loss.
 
-        Args:
+        args:
             fake: generated images
             real: target real images
             discriminator: discriminator network
 
-        Returns:
+        returns:
             tuple of (total_loss, metrics_dict)
         """
         metrics = {}
 
-        # Adversarial loss
+        # adversarial loss
         loss_adv, adv_metrics = self.adv_loss.generator_loss(discriminator, fake)
         metrics.update(adv_metrics)
 
-        # L1 loss
+        # l1 loss
         loss_l1 = self.l1_loss(fake, real)
         metrics['l1_loss'] = loss_l1.item()
 
-        # Total loss
+        # total loss
         total_loss = self.lambda_adv * loss_adv + self.lambda_l1 * loss_l1
 
         metrics['g_total_loss'] = total_loss.item()
@@ -214,23 +214,23 @@ class CombinedLoss(nn.Module):
 
 
 if __name__ == '__main__':
-    # Test loss functions
+    # test loss functions
     print("=" * 50)
     print("Testing Simple Loss Functions")
     print("=" * 50)
 
-    # Create dummy data
+    # create dummy data
     batch_size = 2
     fake = torch.randn(batch_size, 1, 256, 256)
     real = torch.randn(batch_size, 1, 256, 256)
 
-    # Test L1 loss
+    # test l1 loss
     print("\nTesting L1 loss:")
     l1_loss = nn.L1Loss()
     loss = l1_loss(fake, real)
     print(f"  L1 loss: {loss.item():.4f}")
 
-    # Test WGAN-GP loss
+    # test wgan-gp loss
     print("\nTesting WGAN-GP loss:")
     import sys
     from pathlib import Path
@@ -247,7 +247,7 @@ if __name__ == '__main__':
     print(f"  G_loss: {loss_g.item():.4f}")
     print(f"  Metrics: {metrics_g}")
 
-    # Test combined loss
+    # test combined loss
     print("\nTesting combined loss:")
     combined_loss = CombinedLoss(
         lambda_adv=1.0,

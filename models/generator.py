@@ -81,34 +81,34 @@ class UNetGenerator(nn.Module):
         in_channels: int = 1,
         out_channels: int = 1,
         base_channels: int = 64,
-        **kwargs  # Accept but ignore extra arguments for compatibility
+        **kwargs  # accept but ignore extra arguments for compatibility
     ) -> None:
         super(UNetGenerator, self).__init__()
 
-        # Encoder path
+        # encoder path
         self.enc1 = EncoderBlock(in_channels, base_channels)
         self.enc2 = EncoderBlock(base_channels, base_channels * 2)
         self.enc3 = EncoderBlock(base_channels * 2, base_channels * 4)
 
-        # Bottleneck
+        # bottleneck
         self.bottleneck = ConvBlock(base_channels * 4, base_channels * 8)
 
-        # Decoder path
+        # decoder path
         self.dec3 = DecoderBlock(base_channels * 8, base_channels * 4)
         self.dec2 = DecoderBlock(base_channels * 4, base_channels * 2)
         self.dec1 = DecoderBlock(base_channels * 2, base_channels)
 
-        # Output layer
+        # output layer
         self.output = nn.Sequential(
             nn.Conv2d(base_channels, out_channels, kernel_size=1, padding=0),
             nn.Tanh()
         )
 
-        # Initialize weights
+        # initialize weights
         self._init_weights()
 
     def _init_weights(self) -> None:
-        """Initialize weights using kaiming normal for conv layers."""
+        """initialize weights using kaiming normal for conv layers."""
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, a=0.2, mode='fan_in', nonlinearity='leaky_relu')
@@ -117,42 +117,42 @@ class UNetGenerator(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Forward pass through generator.
+        forward pass through generator.
 
-        Args:
+        args:
             x: input tensor [batch, 1, 256, 256]
 
-        Returns:
+        returns:
             output tensor [batch, 1, 256, 256] with values in [-1, 1]
         """
-        # Encoder path with skip connections
+        # encoder path with skip connections
         skip1, x = self.enc1(x)
         skip2, x = self.enc2(x)
         skip3, x = self.enc3(x)
 
-        # Bottleneck
+        # bottleneck
         x = self.bottleneck(x)
 
-        # Decoder path with skip connections
+        # decoder path with skip connections
         x = self.dec3(x, skip3)
         x = self.dec2(x, skip2)
         x = self.dec1(x, skip1)
 
-        # Output
+        # output
         x = self.output(x)
 
         return x
 
 
 if __name__ == '__main__':
-    # Test generator
+    # test generator
     print("=" * 50)
     print("Testing Simple UNet Generator")
     print("=" * 50)
 
     model = UNetGenerator()
 
-    # Test with batch size 4
+    # test with batch size 4
     x = torch.randn(4, 1, 256, 256)
 
     print(f"Input shape: {x.shape}")
@@ -160,7 +160,7 @@ if __name__ == '__main__':
     print(f"Output shape: {output.shape}")
     print(f"Output range: [{output.min():.3f}, {output.max():.3f}]")
 
-    # Count parameters
+    # count parameters
     total_params = sum(p.numel() for p in model.parameters())
     print(f"Total parameters: {total_params:,}")
 

@@ -1,6 +1,6 @@
 """
-Evaluation script for LDCT-GAN model.
-Evaluates the trained generator on the test set and computes metrics.
+evaluation script for ldct-gan model.
+evaluates the trained generator on the test set and computes metrics.
 """
 
 import argparse
@@ -17,15 +17,15 @@ from utils.dataset import LDCTDataset
 
 def calculate_psnr(img1: torch.Tensor, img2: torch.Tensor, max_val: float = 2.0) -> float:
     """
-    Calculate Peak Signal-to-Noise Ratio (PSNR) between two images.
+    calculate peak signal-to-noise ratio (psnr) between two images.
 
-    Args:
-        img1: First image tensor
-        img2: Second image tensor
-        max_val: Maximum possible pixel value (2.0 for range [-1, 1])
+    args:
+        img1: first image tensor
+        img2: second image tensor
+        max_val: maximum possible pixel value (2.0 for range [-1, 1])
 
-    Returns:
-        PSNR value in dB
+    returns:
+        psnr value in db
     """
     mse = torch.mean((img1 - img2) ** 2)
     if mse == 0:
@@ -36,34 +36,34 @@ def calculate_psnr(img1: torch.Tensor, img2: torch.Tensor, max_val: float = 2.0)
 
 def calculate_ssim(img1: torch.Tensor, img2: torch.Tensor, window_size: int = 11) -> float:
     """
-    Calculate Structural Similarity Index (SSIM) between two images.
-    Simplified implementation for grayscale images.
+    calculate structural similarity index (ssim) between two images.
+    simplified implementation for grayscale images.
 
-    Args:
-        img1: First image tensor [1, H, W]
-        img2: Second image tensor [1, H, W]
-        window_size: Size of the Gaussian window
+    args:
+        img1: first image tensor [1, h, w]
+        img2: second image tensor [1, h, w]
+        window_size: size of the gaussian window
 
-    Returns:
-        SSIM value between -1 and 1 (1 is perfect similarity)
+    returns:
+        ssim value between -1 and 1 (1 is perfect similarity)
     """
-    C1 = (0.01 * 2) ** 2  # Constants to stabilize division
+    C1 = (0.01 * 2) ** 2  # constants to stabilize division
     C2 = (0.03 * 2) ** 2
 
-    # Remove channel dimension for calculation
+    # remove channel dimension for calculation
     img1 = img1.squeeze(0)
     img2 = img2.squeeze(0)
 
-    # Calculate means
+    # calculate means
     mu1 = img1.mean()
     mu2 = img2.mean()
 
-    # Calculate variances and covariance
+    # calculate variances and covariance
     sigma1_sq = ((img1 - mu1) ** 2).mean()
     sigma2_sq = ((img2 - mu2) ** 2).mean()
     sigma12 = ((img1 - mu1) * (img2 - mu2)).mean()
 
-    # Calculate SSIM
+    # calculate ssim
     ssim = ((2 * mu1 * mu2 + C1) * (2 * sigma12 + C2)) / \
            ((mu1 ** 2 + mu2 ** 2 + C1) * (sigma1_sq + sigma2_sq + C2))
 
@@ -73,14 +73,14 @@ def calculate_ssim(img1: torch.Tensor, img2: torch.Tensor, window_size: int = 11
 def save_comparison_images(ldct: torch.Tensor, ndct: torch.Tensor, fake: torch.Tensor,
                            save_path: Path, num_samples: int = 8):
     """
-    Save comparison images showing LDCT, Generated, and NDCT side by side.
+    save comparison images showing ldct, generated, and ndct side by side.
 
-    Args:
-        ldct: Low-dose CT images [B, 1, H, W]
-        ndct: Normal-dose CT images [B, 1, H, W]
-        fake: Generated images [B, 1, H, W]
-        save_path: Path to save the comparison image
-        num_samples: Number of samples to display
+    args:
+        ldct: low-dose ct images [b, 1, h, w]
+        ndct: normal-dose ct images [b, 1, h, w]
+        fake: generated images [b, 1, h, w]
+        save_path: path to save the comparison image
+        num_samples: number of samples to display
     """
     num_samples = min(num_samples, ldct.size(0))
 
@@ -89,12 +89,12 @@ def save_comparison_images(ldct: torch.Tensor, ndct: torch.Tensor, fake: torch.T
         axes = axes.reshape(1, -1)
 
     for i in range(num_samples):
-        # Convert from [-1, 1] to [0, 1] for display
+        # convert from [-1, 1] to [0, 1] for display
         ldct_img = (ldct[i, 0].cpu().numpy() + 1) / 2
         fake_img = (fake[i, 0].cpu().numpy() + 1) / 2
         ndct_img = (ndct[i, 0].cpu().numpy() + 1) / 2
 
-        # Display images
+        # display images
         axes[i, 0].imshow(ldct_img, cmap='gray', vmin=0, vmax=1)
         axes[i, 0].set_title('Low-Dose CT (Input)')
         axes[i, 0].axis('off')
@@ -115,9 +115,9 @@ def save_comparison_images(ldct: torch.Tensor, ndct: torch.Tensor, fake: torch.T
 
 def evaluate(args):
     """
-    Main evaluation function.
+    main evaluation function.
     """
-    # Set device
+    # set device
     if torch.cuda.is_available():
         device = torch.device('cuda')
     elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
@@ -127,11 +127,11 @@ def evaluate(args):
 
     print(f"Using device: {device}")
 
-    # Create output directory
+    # create output directory
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Load model
+    # load model
     print(f"Loading model from {args.checkpoint}")
     generator = UNetGenerator(in_channels=1, out_channels=1).to(device)
 
@@ -144,7 +144,7 @@ def evaluate(args):
 
     generator.eval()
 
-    # Load test dataset
+    # load test dataset
     print(f"Loading test dataset from {args.data_dir}")
     test_dataset = LDCTDataset(
         root_dir=args.data_dir,
@@ -162,37 +162,37 @@ def evaluate(args):
 
     print(f"Test set size: {len(test_dataset)}")
 
-    # Evaluation metrics
-    psnr_ldct_list = []  # PSNR between LDCT and NDCT (before)
-    psnr_fake_list = []  # PSNR between Generated and NDCT (after)
-    ssim_ldct_list = []  # SSIM between LDCT and NDCT (before)
-    ssim_fake_list = []  # SSIM between Generated and NDCT (after)
+    # evaluation metrics
+    psnr_ldct_list = []  # psnr between ldct and ndct (before)
+    psnr_fake_list = []  # psnr between generated and ndct (after)
+    ssim_ldct_list = []  # ssim between ldct and ndct (before)
+    ssim_fake_list = []  # ssim between generated and ndct (after)
 
-    # Evaluate
+    # evaluate
     print("\nEvaluating on test set...")
     with torch.no_grad():
         for batch_idx, (ldct, ndct) in enumerate(tqdm(test_loader)):
             ldct = ldct.to(device)
             ndct = ndct.to(device)
 
-            # Generate images
+            # generate images
             fake = generator(ldct)
 
-            # Calculate metrics for each image in batch
+            # calculate metrics for each image in batch
             for i in range(ldct.size(0)):
-                # PSNR
+                # psnr
                 psnr_ldct = calculate_psnr(ldct[i], ndct[i])
                 psnr_fake = calculate_psnr(fake[i], ndct[i])
                 psnr_ldct_list.append(psnr_ldct)
                 psnr_fake_list.append(psnr_fake)
 
-                # SSIM
+                # ssim
                 ssim_ldct = calculate_ssim(ldct[i].cpu(), ndct[i].cpu())
                 ssim_fake = calculate_ssim(fake[i].cpu(), ndct[i].cpu())
                 ssim_ldct_list.append(ssim_ldct)
                 ssim_fake_list.append(ssim_fake)
 
-            # Save comparison images for first batch
+            # save comparison images for first batch
             if batch_idx == 0:
                 save_comparison_images(
                     ldct, ndct, fake,
@@ -200,7 +200,7 @@ def evaluate(args):
                     num_samples=min(8, ldct.size(0))
                 )
 
-    # Calculate average metrics
+    # calculate average metrics
     avg_psnr_ldct = np.mean(psnr_ldct_list)
     avg_psnr_fake = np.mean(psnr_fake_list)
     avg_ssim_ldct = np.mean(ssim_ldct_list)
@@ -209,7 +209,7 @@ def evaluate(args):
     psnr_improvement = avg_psnr_fake - avg_psnr_ldct
     ssim_improvement = avg_ssim_fake - avg_ssim_ldct
 
-    # Print results
+    # print results
     print("\n" + "="*60)
     print("EVALUATION RESULTS")
     print("="*60)
@@ -220,7 +220,7 @@ def evaluate(args):
     print(f"{'SSIM':<20} {avg_ssim_ldct:>14.4f} {avg_ssim_fake:>17.4f} {ssim_improvement:>14.4f}")
     print("="*60)
 
-    # Interpret results
+    # interpret results
     print("\nINTERPRETATION:")
     if psnr_improvement > 0:
         print(f"PSNR improved by {psnr_improvement:.4f} dB ")
@@ -232,7 +232,7 @@ def evaluate(args):
     else:
         print(f"SSIM decreased by {abs(ssim_improvement):.4f}")
 
-    # Save results to file
+    # save results to file
     results_file = output_dir / 'results.txt'
     with open(results_file, 'w') as f:
         f.write("="*60 + "\n")
@@ -253,7 +253,7 @@ def evaluate(args):
 def main():
     parser = argparse.ArgumentParser(description='Evaluate LDCT-GAN model')
 
-    # Data parameters
+    # data parameters
     parser.add_argument('--data-dir', type=str, default='data/processed',
                         help='path to processed data directory')
     parser.add_argument('--checkpoint', type=str, default='checkpoints/best.pth',
@@ -265,7 +265,7 @@ def main():
     parser.add_argument('--image-size', type=int, default=256,
                         help='image size for evaluation')
 
-    # Evaluation parameters
+    # evaluation parameters
     parser.add_argument('--batch-size', type=int, default=16,
                         help='batch size for evaluation')
     parser.add_argument('--num-workers', type=int, default=4,
