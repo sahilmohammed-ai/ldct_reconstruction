@@ -1,6 +1,6 @@
-# SEFH-LDCT: Low-Dose CT Image Denoising
+# Low-Dose CT Image Denoising
 
-## Title
+## Project Title
 
 Deep Learning-Based Denoising of Low-Dose CT Images Using Wasserstein Generative Adversarial Networks
 
